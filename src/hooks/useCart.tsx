@@ -38,13 +38,29 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     return localStorage.getItem(localStorageKey)
   }
 
+  async function getProductStock(productId: number){
+    const productStock = await api.get(`/stock/${productId}`).then(res => res.data.amount)
+    return productStock
+  }
+  
   const addProduct = async (productId: number) => {
     try {
-      // TODO
-    } catch {
-      // TODO
+      const productStock = await getProductStock(productId)
+
+      if(productStock <= 0){
+        throw new Error('Quantidade solicitada fora de estoque')
+      }
+
+
+
+
+    } catch(err) {
+      if(err instanceof Error){
+        toast.error(err.message)
+      }
     }
   };
+
 
   const removeProduct = (productId: number) => {
     try {
