@@ -29,22 +29,7 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
       return JSON.parse(storagedCart);
     }
 
-    return [
-      // {
-      //   id: 1,
-      //   title: "Tênis de Caminhada Leve Confortável",
-      //   price: 179.9,
-      //   image: "https://rocketseat-cdn.s3-sa-east-1.amazonaws.com/modulo-redux/tenis1.jpg",
-      //   amount: 3
-      // },
-      // {
-      //   id: 5,
-      //   title: "Tênis VR Caminhada Confortável Detalhes Couro Masculino",
-      //   price: 139.9,
-      //   image: "https://rocketseat-cdn.s3-sa-east-1.amazonaws.com/modulo-redux/tenis2.jpg",
-      //   amount: 2
-      // }
-    ];
+    return [];
   });
 
   function getLocalStorage(){
