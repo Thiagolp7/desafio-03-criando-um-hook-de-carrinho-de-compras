@@ -26,11 +26,25 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     const storagedCart = getLocalStorage()
 
     if (storagedCart) {
-      
       return JSON.parse(storagedCart);
     }
 
-    return [];
+    return [
+      // {
+      //   id: 1,
+      //   title: "Tênis de Caminhada Leve Confortável",
+      //   price: 179.9,
+      //   image: "https://rocketseat-cdn.s3-sa-east-1.amazonaws.com/modulo-redux/tenis1.jpg",
+      //   amount: 3
+      // },
+      // {
+      //   id: 5,
+      //   title: "Tênis VR Caminhada Confortável Detalhes Couro Masculino",
+      //   price: 139.9,
+      //   image: "https://rocketseat-cdn.s3-sa-east-1.amazonaws.com/modulo-redux/tenis2.jpg",
+      //   amount: 2
+      // }
+    ];
   });
 
   function getLocalStorage(){
@@ -38,35 +52,76 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     return localStorage.getItem(localStorageKey)
   }
 
-  async function getProductStock(productId: number){
-    const productStock = await api.get(`/stock/${productId}`).then(res => res.data.amount)
-    return productStock
+  function setLocalStorage(newCart: Product[]){
+    const localStorageKey = '@RocketShoes:cart'
+    const cart = JSON.stringify(newCart)
+    localStorage.setItem(localStorageKey, cart)
   }
-  
+
   const addProduct = async (productId: number) => {
     try {
-      const productStock = await getProductStock(productId)
+      const updatedCart = JSON.parse(JSON.stringify(cart))
+      const productExist = updatedCart.find((product: Product) => {
+        return productId === product.id
+      })
 
-      if(productStock <= 0){
-        throw new Error('Quantidade solicitada fora de estoque')
+      const stockAmount = await api.get(`/stock/${productId}`)
+      .then(res => res.data.amount)
+      const currentAmount = productExist ? productExist.amount : 0
+      const newAmount = currentAmount + 1
+
+      if(newAmount > stockAmount){
+        toast.error('Quantidade solicitada fora de estoque')
+        return
       }
 
+      if(productExist){
+        productExist.amount = newAmount
+        setCart(updatedCart)
+        setLocalStorage(updatedCart)
+        return
+      }
 
+      if(!productExist){
+        const product = await api.get(`/products/${productId}`)
+        
+        const newProduct = {...product.data, amount: 1}
+        updatedCart.push(newProduct)
 
+        setCart(updatedCart)
+        setLocalStorage(updatedCart)
+      }
 
-    } catch(err) {
+    } catch(err){
+      toast.error('Erro na adição do produto')
       if(err instanceof Error){
-        toast.error(err.message)
+        console.log(err.message)
       }
+      
     }
   };
 
-
   const removeProduct = (productId: number) => {
     try {
-      // TODO
-    } catch {
-      // TODO
+      const updatedCart = JSON.parse(JSON.stringify(cart))
+      
+      const product = updatedCart.find((product: Product) => {
+        return productId === product.id
+      })
+
+      console.log(product)
+
+      if(!product){
+        throw new Error("Erro na remoção do produto")
+      }
+
+      updatedCart.pop(product)
+      setCart(updatedCart)
+      setLocalStorage(updatedCart)
+    } catch(err) {
+      if(err instanceof Error){ 
+        toast.error(err.message);
+      }
     }
   };
 
@@ -75,9 +130,35 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     amount,
   }: UpdateProductAmount) => {
     try {
-      // TODO
+      const stock = await api.get(`/stock/${productId}`)
+      .then(res => res.data.amount)
+      
+      const newAmount = amount
+      
+      if(newAmount < 1){
+        toast.error('Erro na alteração de quantidade do produto');
+        return
+      }
+
+      if(newAmount > stock){
+        toast.error('Quantidade solicitada fora de estoque');
+        return
+      }
+      
+      const oldCart = JSON.parse(JSON.stringify(cart))
+      
+      const updatedCart = oldCart.map((product: Product) => {
+        if(product.id === productId){
+          return {...product, amount: newAmount}
+        }
+        return product
+      })
+
+      setCart(updatedCart)
+      setLocalStorage(updatedCart)
+
     } catch {
-      // TODO
+      toast.error('Erro na alteração de quantidade do produto')
     }
   };
 
